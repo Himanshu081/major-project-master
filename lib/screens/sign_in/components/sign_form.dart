@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop_app/components/custom_surfix_icon.dart';
 import 'package:shop_app/components/form_error.dart';
 import 'package:shop_app/helper/keyboard.dart';
@@ -16,10 +20,38 @@ class SignForm extends StatefulWidget {
 
 class _SignFormState extends State<SignForm> {
   final _formKey = GlobalKey<FormState>();
+  TextEditingController _emailController = TextEditingController();
+  TextEditingController _passController = TextEditingController();
+  bool _isloading = false;
   String email;
   String password;
   bool remember = false;
   final List<String> errors = [];
+  signIn(String email, String pass) async {
+    String url = "paste login api url here";
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    Map body = {"email": email, "password": pass}; //jo jo body me bhejna h
+    var jsonResonse;
+
+    var res = await http.post(url, body: body);
+    // check status code of api response::
+    if (res.statusCode == 200) {
+      jsonResonse = json.decode(res.body);
+      print("Response status is :${res.statusCode}");
+      print("Response body is :${res.body}");
+      if (jsonResonse != null) {
+        setState(() {
+          _isloading = false;
+        });
+        sharedPreferences.setString("token", jsonResonse['token']);
+        Navigator.pushNamed(context, LoginSuccessScreen.routeName);
+      } else {
+        setState(() {
+          _isloading = false;
+        });
+      }
+    }
+  }
 
   void addError({String error}) {
     if (!errors.contains(error))
@@ -72,14 +104,19 @@ class _SignFormState extends State<SignForm> {
           SizedBox(height: getProportionateScreenHeight(20)),
           DefaultButton(
             text: "Continue",
-            press: () {
-              if (_formKey.currentState.validate()) {
-                _formKey.currentState.save();
-                // if all are valid then go to success screen
-                KeyboardUtil.hideKeyboard(context);
-                Navigator.pushNamed(context, LoginSuccessScreen.routeName);
-              }
-            },
+            press: _emailController.text == "" || _passController.text == ""
+                ? null
+                : () {
+                    if (_formKey.currentState.validate()) {
+                      _formKey.currentState.save();
+                      signIn(_emailController.text, _passController.text);
+                    }
+                  }
+            // if all are valid then go to success screen
+            // KeyboardUtil.hideKeyboard(context);
+            // Navigator.pushNamed(context, LoginSuccessScreen.routeName);
+
+            ,
           ),
         ],
       ),
@@ -88,6 +125,7 @@ class _SignFormState extends State<SignForm> {
 
   TextFormField buildPasswordFormField() {
     return TextFormField(
+      controller: _passController,
       obscureText: true,
       onSaved: (newValue) => password = newValue,
       onChanged: (value) {
@@ -121,6 +159,7 @@ class _SignFormState extends State<SignForm> {
 
   TextFormField buildEmailFormField() {
     return TextFormField(
+      controller: _emailController,
       keyboardType: TextInputType.emailAddress,
       onSaved: (newValue) => email = newValue,
       onChanged: (value) {
