@@ -22,7 +22,7 @@ class _SignFormState extends State<SignForm> {
   final _formKey = GlobalKey<FormState>();
   TextEditingController _emailController = TextEditingController();
   TextEditingController _passController = TextEditingController();
-  bool _isloading = false; //loading aacording to user input
+  bool _isloading = false;
   String email;
   String password;
   bool remember = false;
