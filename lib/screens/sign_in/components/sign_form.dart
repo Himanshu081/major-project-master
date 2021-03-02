@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop_app/components/custom_surfix_icon.dart';
 import 'package:shop_app/components/form_error.dart';
-import 'package:shop_app/helper/keyboard.dart';
 import 'package:shop_app/screens/forgot_password/forgot_password_screen.dart';
 import 'package:shop_app/screens/login_success/login_success_screen.dart';
 
@@ -29,14 +28,19 @@ class _SignFormState extends State<SignForm> {
   bool remember = false;
   final List<String> errors = [];
   signIn(String email, String pass) async {
-    String url = "paste login api url here";
+    print("hello1");
+    String url = "http://192.168.1.15:5000/user/login";
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    Map body = {"email": email, "password": pass}; //jo jo body me bhejna h
+    final body =
+        jsonEncode({"email": email, "password": pass}); //jo jo body me bhejna h
     var jsonResonse;
-
-    var res = await http.post(url, body: body);
+    print(body);
+    Map<String, String> headers = {'Content-Type': 'application/json'};
+    var res = await http.post(url, headers: headers, body: body);
     // check status code of api response::
+    print(res.statusCode);
     if (res.statusCode == 200) {
+      print("hello");
       jsonResonse = json.decode(res.body);
       print("Response status is :${res.statusCode}");
       print("Response body is :${res.body}");
@@ -105,14 +109,13 @@ class _SignFormState extends State<SignForm> {
           SizedBox(height: getProportionateScreenHeight(20)),
           DefaultButton(
             text: "Continue",
-            press: _emailController.text == "" || _passController.text == ""
-                ? null
-                : () {
-                    if (_formKey.currentState.validate()) {
-                      _formKey.currentState.save();
-                      signIn(_emailController.text, _passController.text);
-                    }
-                  }
+            press: () {
+              if (_formKey.currentState.validate()) {
+                _formKey.currentState.save();
+                print("Response status is");
+                signIn(_emailController.text, _passController.text);
+              }
+            }
             // if all are valid then go to success screen
             // KeyboardUtil.hideKeyboard(context);
             // Navigator.pushNamed(context, LoginSuccessScreen.routeName);
@@ -132,7 +135,7 @@ class _SignFormState extends State<SignForm> {
       onChanged: (value) {
         if (value.isNotEmpty) {
           removeError(error: kPassNullError);
-        } else if (value.length >= 8) {
+        } else if (value.length >= 5) {
           removeError(error: kShortPassError);
         }
         return null;
@@ -141,7 +144,7 @@ class _SignFormState extends State<SignForm> {
         if (value.isEmpty) {
           addError(error: kPassNullError);
           return "";
-        } else if (value.length < 8) {
+        } else if (value.length < 5) {
           addError(error: kShortPassError);
           return "";
         }
